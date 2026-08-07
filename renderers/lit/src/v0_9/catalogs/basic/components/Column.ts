@@ -16,7 +16,7 @@
 
 import {html, nothing, css, PropertyValues} from 'lit';
 import {customElement} from 'lit/decorators.js';
-import {map} from 'lit/directives/map.js';
+import {repeat} from 'lit/directives/repeat.js';
 import {ColumnApi} from '@a2ui/web_core/v0_9/basic_catalog';
 import {
   BasicCatalogA2uiLitElement,
@@ -39,24 +39,21 @@ const ALIGN_MAP: Record<string, string> = {
   center: 'center',
   end: 'flex-end',
   stretch: 'stretch',
+  baseline: 'baseline',
 };
 
 @customElement('a2ui-basic-column')
 export class A2uiBasicColumnElement extends BasicCatalogA2uiLitElement<typeof ColumnApi> {
-  /**
-   * The styles of the column can be customized by redefining the following
-   * CSS variables:
-   *
-   * - `--a2ui-column-gap`: The gap between items in the column. Defaults to `--a2ui-spacing-m`.
-   */
   static override styles = css`
     :host,
     a2ui-basic-column {
       display: flex;
       flex-direction: column;
-      gap: var(--a2ui-column-gap, var(--a2ui-spacing-m));
+      gap: var(--a2ui-column-gap, var(--a2ui-spacing-m, 16px));
     }
   `;
+
+  protected readonly api = ColumnApi;
 
   protected createController() {
     return new A2uiController(this, ColumnApi);
@@ -64,20 +61,35 @@ export class A2uiBasicColumnElement extends BasicCatalogA2uiLitElement<typeof Co
 
   override updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
-    const props = this.controller.props;
+    const props = this.controller?.props;
     if (props) {
-      this.style.justifyContent = JUSTIFY_MAP[props.justify ?? ''] ?? 'flex-start';
-      this.style.alignItems = ALIGN_MAP[props.align ?? ''] ?? 'stretch';
+      this.style.display = 'flex';
+      this.style.flexDirection = 'column';
+      this.style.gap = 'var(--a2ui-column-gap, var(--a2ui-spacing-m, 16px))';
+      if (props.justify) {
+        this.style.justifyContent = JUSTIFY_MAP[props.justify] || props.justify;
+      } else {
+        this.style.justifyContent = 'flex-start';
+      }
+      if (props.align) {
+        this.style.alignItems = ALIGN_MAP[props.align] || props.align;
+      } else {
+        this.style.alignItems = 'stretch';
+      }
     }
   }
 
   override render() {
-    const props = this.controller.props;
+    const props = this.controller?.props;
     if (!props) return nothing;
 
     const children: ResolvedChildList = Array.isArray(props.children) ? props.children : [];
+    const getKey = (child: any) =>
+      typeof child === 'object' && child !== null
+        ? `${child.basePath ?? ''}/${child.id}`
+        : String(child);
 
-    return html` ${map(children, child => html`${this.renderNode(child)}`)} `;
+    return html` ${repeat(children, getKey, child => html`${this.renderNode(child)}`)} `;
   }
 }
 

@@ -44,9 +44,12 @@ export class A2uiBasicTextFieldElement extends BasicCatalogA2uiLitElement<typeof
     a2ui-basic-textfield {
       display: flex;
       flex-direction: column;
+      width: 100%;
       gap: var(--a2ui-spacing-xs, 0.25rem);
     }
     .a2ui-textfield {
+      box-sizing: border-box;
+      width: 100%;
       background-color: var(--a2ui-color-input, #fff);
       color: var(--a2ui-color-on-input, #333);
       border: var(--a2ui-textfield-border, var(--a2ui-border));
@@ -79,11 +82,21 @@ export class A2uiBasicTextFieldElement extends BasicCatalogA2uiLitElement<typeof
   }
 
   override render() {
-    const props = this.controller.props;
+    const props = this.controller?.props;
     if (!props) return nothing;
 
     const isInvalid = props.isValid === false;
-    const onInput = (e: Event) => props.setValue?.((e.target as HTMLInputElement).value);
+    const onInput = (e: Event) => {
+      const val = (e.target as HTMLInputElement).value;
+      if (typeof props.setValue === 'function') {
+        props.setValue(val);
+      } else {
+        const rawVal = this.context?.componentModel?.properties['value'];
+        if (rawVal && typeof rawVal === 'object' && 'path' in rawVal) {
+          this.context.dataContext.set(rawVal.path, val);
+        }
+      }
+    };
     let type: 'text' | 'number' | 'password' = 'text';
     if (props.variant === 'number') type = 'number';
     if (props.variant === 'obscured') type = 'password';
@@ -105,7 +118,7 @@ export class A2uiBasicTextFieldElement extends BasicCatalogA2uiLitElement<typeof
             @input=${onInput}
           />`}
       ${isInvalid && props.validationErrors?.length
-        ? html`<div class="error">${props.validationErrors[0]}</div>`
+        ? props.validationErrors.map((err: string) => html`<div class="error">${err}</div>`)
         : nothing}
     `;
   }

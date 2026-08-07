@@ -1,5 +1,15 @@
 ## Unreleased
 
+- (v0_9) Align Basic Catalog component behaviors and styling contracts with the Angular reference implementation: [#2205](https://github.com/a2ui-project/a2ui/pull/2205)
+  - `TextField`: Render all validation error messages in `validationErrors` instead of only the first error, add direct path mutation fallback, and ensure full-width container styling (`width: 100%`, `box-sizing: border-box`).
+  - `DateTimeInput`: Add `width: 100%` container styling and `box-sizing: border-box` input sizing.
+  - `Column`: Add `width: 100%` container styling to ensure consistent flex layout distribution.
+  - `Row`, `Column`, `List`: Use Lit `repeat` directive to ensure child elements are tracked by key and DOM nodes are preserved across reordering operations.
+  - `Tabs`: Clamp `activeIndex` to valid bounds in `willUpdate` when `tabs` array changes dynamically.
+  - `Text`: Directly render semantic HTML tags for non-markdown variants (`h1`-`h5`, `caption`) and add flex weight styling.
+  - `Video`: Wrap video in `.a2ui-video-container` with fallback message for unsupported browsers.
+  - `Image`: Remove default `width: 100%` constraint on `img` elements to preserve intrinsic aspect ratios and support explicit layout sizing.
+  - `Modal`: Migrate from native `<dialog>` to an overlay container (`.a2ui-modal-overlay`, `.a2ui-modal-content`) managed with explicit `@state() isOpen` lifecycle tracking, standard backdrop theming (`--a2ui-modal-backdrop-bg`), accessible dialog ARIA attributes (`role="dialog"`, `aria-modal="true"`), and an accessible close button (`aria-label="Close"`).
 - (v0_9) Migrate Basic Catalog components and surface rendering from Shadow DOM to Light DOM. [#2204](https://github.com/a2ui-project/a2ui/pull/2204)
 
 ## 0.10.3
