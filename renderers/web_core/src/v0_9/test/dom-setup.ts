@@ -15,6 +15,36 @@
  */
 
 import {JSDOM} from 'jsdom';
+import * as nodeTest from 'node:test';
+// @ts-expect-error jasmine-core does not provide type declarations
+import jasmineCore from 'jasmine-core';
+
+// Provide global Jasmine BDD testing functions when running under Node.js test runner
+if (typeof (globalThis as any).describe === 'undefined') {
+  (globalThis as any).describe = nodeTest.describe;
+  (globalThis as any).it = nodeTest.it;
+  (globalThis as any).beforeEach = nodeTest.beforeEach;
+  (globalThis as any).afterEach = nodeTest.afterEach;
+  (globalThis as any).beforeAll = nodeTest.before;
+  (globalThis as any).afterAll = nodeTest.after;
+}
+
+if (typeof (globalThis as any).expect === 'undefined') {
+  const jasmineInstance = (jasmineCore as any).core(jasmineCore);
+  const env = jasmineInstance.getEnv();
+  const currentSpec = {
+    addExpectationResult(passed: boolean, data: {message: string; stack?: string}) {
+      if (!passed) {
+        const err = new Error(data.message);
+        if (data.stack) err.stack = data.stack;
+        throw err;
+      }
+    },
+  };
+  (env as any).currentSpec = currentSpec;
+  const jasmineInterface = (jasmineCore as any).interface(jasmineInstance, env);
+  Object.assign(globalThis, jasmineInterface);
+}
 
 let dom: JSDOM | null = null;
 const originalGlobals: Record<string, any> = {};
@@ -54,9 +84,6 @@ export function setupTestDom() {
       'requestAnimationFrame',
       'cancelAnimationFrame',
       'CSSStyleSheet',
-      'CSSStyleRule',
-      'CSSMediaRule',
-      'CSSRule',
       'ShadowRoot',
     ];
 
@@ -98,9 +125,6 @@ export function setupTestDom() {
     Event: dom.window.Event,
     MutationObserver: dom.window.MutationObserver,
     CSSStyleSheet: dom.window.CSSStyleSheet,
-    CSSStyleRule: dom.window.CSSStyleRule,
-    CSSMediaRule: dom.window.CSSMediaRule,
-    CSSRule: dom.window.CSSRule,
     ShadowRoot: (dom.window as any).ShadowRoot,
     requestAnimationFrame: (cb: FrameRequestCallback) => setTimeout(cb, 16),
     cancelAnimationFrame: (id: string | number | NodeJS.Timeout | undefined) =>
@@ -112,12 +136,15 @@ export function setupTestDom() {
 setupTestDom();
 
 /**
- * Cleans up the JSDOM instance between tests.
+ * Cleans up the JSDOM instance and restores the original Node.js globals.
  */
 export function teardownTestDom() {
+  // Clear the document to prevent leaks between tests
   if (dom) {
     dom.window.document.body.innerHTML = '';
   }
+  applyGlobals(originalGlobals);
+  dom = null;
 }
 
 /**
@@ -126,9 +153,11 @@ export function teardownTestDom() {
  */
 export async function asyncUpdate<T = any>(
   target: T,
-  updateFn: (el: T) => void | Promise<void>,
+  updateFn?: (el: T) => void | Promise<void>,
 ): Promise<void> {
-  await updateFn(target);
+  if (updateFn) {
+    await updateFn(target);
+  }
   if ((target as any).updateComplete) {
     await (target as any).updateComplete;
   } else {

@@ -14,9 +14,4 @@
  * limitations under the License.
  */
 
-export {
-  basicCatalog,
-  BasicCatalogA2uiLitElement,
-  type ResolvedChildRef,
-  type ResolvedChildList,
-} from '@a2ui/web_core/v0_9/basic_catalog';
+export * from './markdown.js';
