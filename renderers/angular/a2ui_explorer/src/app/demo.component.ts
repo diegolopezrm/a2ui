@@ -28,6 +28,7 @@ import {
 import {CommonModule} from '@angular/common';
 import {
   A2uiRendererService,
+  A2UI_USE_UNIVERSAL_COMPONENTS,
   AngularCatalog,
   provideA2Ui,
   SurfaceComponent as SurfaceComponentV09,
@@ -741,9 +742,10 @@ function getUseUniversalComponents(): boolean {
     provideA2Ui(() => {
       const dispatcher = inject(ActionDispatcher);
       const catalog = inject(AngularCatalog);
+      const injectedUniversal = inject(A2UI_USE_UNIVERSAL_COMPONENTS, {optional: true}) ?? false;
       return {
         catalogs: [catalog],
-        useUniversalComponents: getUseUniversalComponents(),
+        useUniversalComponents: getUseUniversalComponents() || injectedUniversal,
         actionHandler: (action: A2uiClientAction) => dispatcher.dispatch(action),
       };
     }),
