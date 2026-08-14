@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-export * from './A2uiSurface';
-export * from './A2uiNodeSurface';
-export * from './adapter';
-export {useSignalValue, type NodeBuildChild, type NodeViewProps} from './node-view';
-export * from './core/A2UIProvider';
+import {BasicCatalog} from '@a2ui/react/v0_9';
+import {customSliderComponent} from './custom-slider';
+import {customGridComponent} from './custom-grid';
 
-// Export basic catalog components directly for 3P developers
-export * from './catalog/basic';
+/**
+ * A catalog specific to the React demo explorer, extending the basic catalog
+ * with custom components.
+ */
+export const demoCatalog = new BasicCatalog({
+  extraComponents: [customSliderComponent, customGridComponent],
+});

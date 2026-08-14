@@ -14,9 +14,35 @@
  * limitations under the License.
  */
 
-import React, {useSyncExternalStore, memo, useMemo, useCallback} from 'react';
+import React, {useSyncExternalStore, memo, useMemo, useCallback, useRef, useEffect} from 'react';
 import {type SurfaceModel, ComponentContext, type ComponentModel} from '@a2ui/web_core/v0_9';
-import type {ReactComponentImplementation} from './adapter';
+import {basicCatalog as webCoreBasicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
+import type {ReactComponentImplementation, ReactCatalogComponent} from './adapter';
+import {useA2UI} from './core/A2UIProvider';
+
+const WebComponentNode = memo(
+  ({tagName, context}: {tagName: string; context: ComponentContext}) => {
+    const elRef = useRef<HTMLElement | null>(null);
+    const contextRef = useRef(context);
+    contextRef.current = context;
+
+    const setRef = useCallback((node: HTMLElement | null) => {
+      elRef.current = node;
+      if (node) {
+        (node as unknown as {context?: ComponentContext}).context = contextRef.current;
+      }
+    }, []);
+
+    useEffect(() => {
+      if (elRef.current) {
+        (elRef.current as unknown as {context?: ComponentContext}).context = context;
+      }
+    }, [context]);
+
+    return React.createElement(tagName, {ref: setRef});
+  },
+);
+WebComponentNode.displayName = 'WebComponentNode';
 
 const ResolvedChild = memo(
   ({
@@ -26,14 +52,12 @@ const ResolvedChild = memo(
     compImpl,
     componentModel,
   }: {
-    surface: SurfaceModel<ReactComponentImplementation>;
+    surface: SurfaceModel<ReactCatalogComponent>;
     id: string;
     basePath: string;
     componentModel: ComponentModel;
-    compImpl: ReactComponentImplementation;
+    compImpl: ReactCatalogComponent;
   }) => {
-    const ComponentToRender = compImpl.render;
-
     // Create context. Recreate if the componentModel instance changes (e.g. type change recreation).
     const context = useMemo(
       () => new ComponentContext(surface, id, basePath),
@@ -57,13 +81,37 @@ const ResolvedChild = memo(
       [surface, context.dataContext.path],
     );
 
-    return <ComponentToRender context={context} buildChild={buildChild} />;
+    const {useUniversalComponents} = useA2UI();
+
+    if (useUniversalComponents) {
+      const universalComp =
+        'tagName' in compImpl && compImpl.tagName
+          ? compImpl
+          : webCoreBasicCatalog.components.get(componentModel.type);
+      if (universalComp && 'tagName' in universalComp && universalComp.tagName) {
+        return <WebComponentNode tagName={universalComp.tagName} context={context} />;
+      }
+    }
+
+    if (
+      'render' in compImpl &&
+      typeof (compImpl as ReactComponentImplementation).render === 'function'
+    ) {
+      const ComponentToRender = (compImpl as ReactComponentImplementation).render;
+      return <ComponentToRender context={context} buildChild={buildChild} />;
+    }
+
+    if ('tagName' in compImpl && compImpl.tagName) {
+      return <WebComponentNode tagName={compImpl.tagName} context={context} />;
+    }
+
+    return null;
   },
 );
 ResolvedChild.displayName = 'ResolvedChild';
 
 export const DeferredChild: React.FC<{
-  surface: SurfaceModel<ReactComponentImplementation>;
+  surface: SurfaceModel<ReactCatalogComponent>;
   id: string;
   basePath: string;
 }> = memo(({surface, id, basePath}) => {
@@ -124,7 +172,7 @@ export const DeferredChild: React.FC<{
 });
 DeferredChild.displayName = 'DeferredChild';
 
-export const A2uiSurface: React.FC<{surface: SurfaceModel<ReactComponentImplementation>}> = ({
+export const A2uiSurface: React.FC<{surface: SurfaceModel<ReactCatalogComponent>}> = ({
   surface,
 }) => {
   // The root component always has ID 'root' and base path '/'
