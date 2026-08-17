@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,30 +14,16 @@
  * limitations under the License.
  */
 
+import {Catalog} from '@a2ui/web_core/v0_9';
+import {basicCatalog} from '@a2ui/lit/v0_9';
+import {customSliderComponent} from './custom-slider.js';
+import {customGridComponent} from './custom-grid.js';
+
 /**
- * Re-exported for backwards compatibility.
+ * A catalog specific to the demo, extending the basic catalog with custom components.
  */
-export {
-  basicCatalog,
-  BasicCatalogA2uiLitElement,
-  type ResolvedChildRef,
-  type ResolvedChildList,
-  A2uiAudioPlayer,
-  A2uiButton,
-  A2uiCard,
-  A2uiCheckBox,
-  A2uiChoicePicker,
-  A2uiColumn,
-  A2uiDateTimeInput,
-  A2uiDivider,
-  A2uiIcon,
-  A2uiImage,
-  A2uiList,
-  A2uiModal,
-  A2uiRow,
-  A2uiSlider,
-  A2uiTabs,
-  A2uiText,
-  A2uiTextField,
-  A2uiVideo,
-} from '@a2ui/web_core/v0_9/basic_catalog';
+export const demoCatalog = new Catalog(
+  basicCatalog.id,
+  [...Array.from(basicCatalog.components.values()), customSliderComponent, customGridComponent],
+  Array.from(basicCatalog.functions.values()),
+);
