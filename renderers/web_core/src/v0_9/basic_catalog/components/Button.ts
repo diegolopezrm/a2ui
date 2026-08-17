@@ -19,7 +19,7 @@ import {customElement} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {ButtonApi} from './basic_components.js';
 import {BasicCatalogA2uiLitElement} from '../basic-catalog-a2ui-lit-element.js';
-import {WebComponentImplementation} from '../../catalog/types.js';
+import {createComponentImplementation} from '../../catalog/types.js';
 
 @customElement('a2ui-basic-button')
 export class A2uiBasicButtonElement extends BasicCatalogA2uiLitElement<typeof ButtonApi> {
@@ -101,7 +101,4 @@ export class A2uiBasicButtonElement extends BasicCatalogA2uiLitElement<typeof Bu
   }
 }
 
-export const A2uiButton: WebComponentImplementation = {
-  ...ButtonApi,
-  tagName: 'a2ui-basic-button',
-};
+export const A2uiButton = createComponentImplementation(ButtonApi, A2uiBasicButtonElement);

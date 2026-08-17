@@ -1,5 +1,6 @@
 ## Unreleased
 
+- (v0_9) Add `createComponentImplementation` helper for Web Components / Lit and refactor all basic catalog components to use it. [#2313](https://github.com/a2ui-project/a2ui/pull/2313)
 - (v0_9) Add optional peer dependency `@a2ui/markdown-it` to `@a2ui/web_core`. Host applications can optionally install it to provide Markdown rendering functionality to A2UI text components without manual renderer configuration. [#2272](https://github.com/a2ui-project/a2ui/pull/2272)
 - (v0_9) Add unit test coverage for all basic catalog Web Component implementations.
 - (v0_9) Add `@a2ui/web_core/v0_9/basic_catalog` entrypoint exporting universal Web Component basic catalog implementations (`A2uiText`, `A2uiButton`, `A2uiTextField`, `A2uiRow`, `A2uiColumn`, `A2uiList`, `A2uiImage`, `A2uiIcon`, `A2uiVideo`, `A2uiAudioPlayer`, `A2uiCard`, `A2uiDivider`, `A2uiCheckBox`, `A2uiSlider`, `A2uiDateTimeInput`, `A2uiChoicePicker`, `A2uiTabs`, `A2uiModal`, `basicCatalog`). [#2190](https://github.com/a2ui-project/a2ui/pull/2190)

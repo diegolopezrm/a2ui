@@ -22,7 +22,7 @@ import {
   BasicCatalogA2uiLitElement,
   type ResolvedChildList,
 } from '../basic-catalog-a2ui-lit-element.js';
-import {WebComponentImplementation} from '../../catalog/types.js';
+import {createComponentImplementation} from '../../catalog/types.js';
 
 @customElement('a2ui-list')
 export class A2uiListElement extends BasicCatalogA2uiLitElement<typeof ListApi> {
@@ -91,7 +91,4 @@ export class A2uiListElement extends BasicCatalogA2uiLitElement<typeof ListApi> 
   }
 }
 
-export const A2uiList: WebComponentImplementation = {
-  ...ListApi,
-  tagName: 'a2ui-list',
-};
+export const A2uiList = createComponentImplementation(ListApi, A2uiListElement);
