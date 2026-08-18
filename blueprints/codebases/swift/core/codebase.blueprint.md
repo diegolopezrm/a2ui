@@ -1,7 +1,7 @@
 ---
 codebase_path: swift/core
 associated_module: a2ui_core
-module_blueprint_commit: null
+module_blueprint_commit: '1510d5c42c4d8a365209ef27c6643a15b18c58bf'
 implemented_features: []
 local_development:
   test_command: './run_tests.sh'

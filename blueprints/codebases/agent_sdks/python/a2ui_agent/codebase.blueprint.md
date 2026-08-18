@@ -1,7 +1,7 @@
 ---
 codebase_path: agent_sdks/python/a2ui_agent
 associated_module: a2ui_agent
-module_blueprint_commit: null
+module_blueprint_commit: '920b9f764fc8cc25e25e1ec1b050795189665f90'
 implemented_features: []
 local_development:
   test_command: 'uv run pytest'

@@ -1,7 +1,7 @@
 ---
 codebase_path: renderers/flutter
 associated_module: a2ui_framework_adapter
-module_blueprint_commit: null
+module_blueprint_commit: 'a2b4c90622fee9ad1f07ee1e4c3c73d905c36381'
 implemented_features: []
 local_development:
   test_command: 'flutter test'
