@@ -17,7 +17,7 @@
 import * as assert from 'node:assert';
 import {describe, it} from 'node:test';
 import {z} from 'zod';
-import {GenericBinder} from './generic-binder.js';
+import {GenericBinder, scrapeSchemaBehavior} from './generic-binder.js';
 import {ComponentContext} from './component-context.js';
 import {SurfaceModel} from '../state/surface-model.js';
 import {Catalog} from '../catalog/types.js';
@@ -316,5 +316,164 @@ describe('GenericBinder Checkable Trait', () => {
       extra: 'another_prop',
     };
     assert.strictEqual(notificationCount, 1);
+  });
+
+  it('should resolve STRUCTURAL ChildList bindings using id instead of componentId', async () => {
+    const {surface} = setupSurfaceAndMocks();
+    surface.dataModel.set('/rows', [{name: 'Row 1'}, {name: 'Row 2'}]);
+
+    const structuralSchema = z.object({
+      children: CommonSchemas.ChildList,
+    });
+
+    const compModel = new ComponentModel('c9', 'List', {
+      children: {
+        id: 'row-template',
+        path: '/rows',
+      },
+    });
+    surface.componentsModel.addComponent(compModel);
+
+    const context = new ComponentContext(surface, 'c9');
+    const binder = new GenericBinder<any>(context, structuralSchema);
+
+    assert.deepStrictEqual(binder.snapshot.children, [
+      {id: 'row-template', basePath: '/rows/0'},
+      {id: 'row-template', basePath: '/rows/1'},
+    ]);
+  });
+
+  describe('scrapeSchemaBehavior schema inference', () => {
+    it('should infer behavior from schema descriptions and property names', () => {
+      // Description-based matching
+      assert.deepStrictEqual(scrapeSchemaBehavior(z.any().describe('#/$defs/Action')), {
+        type: 'ACTION',
+      });
+      assert.deepStrictEqual(scrapeSchemaBehavior(z.any().describe('#/$defs/ChildList')), {
+        type: 'STRUCTURAL',
+      });
+      assert.deepStrictEqual(scrapeSchemaBehavior(z.any().describe('#/$defs/DynamicString')), {
+        type: 'DYNAMIC',
+      });
+      assert.deepStrictEqual(scrapeSchemaBehavior(z.any().describe('#/$defs/DataBinding')), {
+        type: 'DYNAMIC',
+      });
+
+      // Object properties matching
+      const objSchema = z.object({
+        action: z.any(),
+        children: z.any(),
+        text: z.any(),
+        label: z.any(),
+        value: z.any(),
+        url: z.any(),
+        checks: z.any(),
+      });
+
+      const behavior = scrapeSchemaBehavior(objSchema);
+      assert.strictEqual(behavior.type, 'OBJECT');
+      assert.strictEqual((behavior as any).shape.action.type, 'ACTION');
+      assert.strictEqual((behavior as any).shape.children.type, 'STRUCTURAL');
+      assert.strictEqual((behavior as any).shape.text.type, 'DYNAMIC');
+      assert.strictEqual((behavior as any).shape.label.type, 'DYNAMIC');
+      assert.strictEqual((behavior as any).shape.value.type, 'DYNAMIC');
+      assert.strictEqual((behavior as any).shape.url.type, 'DYNAMIC');
+      assert.strictEqual((behavior as any).shape.checks.type, 'CHECKABLE');
+
+      // Do not short-circuit to DYNAMIC if property is a nested ZodObject or ZodArray
+      const nestedSchema = z.object({
+        value: z.object({
+          nestedField: z.string().describe('#/$defs/DynamicString'),
+        }),
+        text: z.array(z.string().describe('#/$defs/DynamicString')),
+      });
+      const nestedBehavior = scrapeSchemaBehavior(nestedSchema);
+      assert.strictEqual(nestedBehavior.type, 'OBJECT');
+      assert.strictEqual((nestedBehavior as any).shape.value.type, 'OBJECT');
+      assert.strictEqual((nestedBehavior as any).shape.text.type, 'ARRAY');
+    });
+  });
+
+  describe('Static fallback behavior for unannotated schemas', () => {
+    it('should resolve dynamic path bindings in static schema properties reactively', async () => {
+      const {surface} = setupSurfaceAndMocks();
+      surface.dataModel.set('/rawTitle', 'Static Title');
+
+      const unannotatedSchema = z.object({
+        customProp: z.any(),
+      });
+
+      const compModel = new ComponentModel('c10', 'Custom', {
+        customProp: {path: '/rawTitle'},
+      });
+      surface.componentsModel.addComponent(compModel);
+
+      const context = new ComponentContext(surface, 'c10');
+      const binder = new GenericBinder<any>(context, unannotatedSchema);
+      binder.subscribe(() => {});
+
+      assert.strictEqual(binder.snapshot.customProp, 'Static Title');
+
+      surface.dataModel.set('/rawTitle', 'Updated Static Title');
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      assert.strictEqual(binder.snapshot.customProp, 'Updated Static Title');
+    });
+
+    it('should resolve structural templates in static schema properties', () => {
+      const {surface} = setupSurfaceAndMocks();
+      surface.dataModel.set('/cards', [{a: 1}, {a: 2}]);
+
+      const unannotatedSchema = z.object({
+        items: z.any(),
+      });
+
+      const compModel = new ComponentModel('c11', 'Custom', {
+        items: {id: 'card-view', path: '/cards'},
+      });
+      surface.componentsModel.addComponent(compModel);
+
+      const context = new ComponentContext(surface, 'c11');
+      const binder = new GenericBinder<any>(context, unannotatedSchema);
+
+      assert.deepStrictEqual(binder.snapshot.items, [
+        {id: 'card-view', basePath: '/cards/0'},
+        {id: 'card-view', basePath: '/cards/1'},
+      ]);
+    });
+
+    it('should resolve action events in static schema properties', () => {
+      const {surface} = setupSurfaceAndMocks();
+      surface.dataModel.set('/user/id', 42);
+
+      const unannotatedSchema = z.object({
+        handleClick: z.any(),
+      });
+
+      const compModel = new ComponentModel('c12', 'Custom', {
+        handleClick: {
+          event: {
+            name: 'custom_click',
+            context: {userId: {path: '/user/id'}},
+          },
+        },
+      });
+      surface.componentsModel.addComponent(compModel);
+
+      let dispatched: any = null;
+      surface.onAction.subscribe(a => {
+        dispatched = a;
+      });
+
+      const context = new ComponentContext(surface, 'c12');
+      const binder = new GenericBinder<any>(context, unannotatedSchema);
+
+      assert.strictEqual(typeof binder.snapshot.handleClick, 'function');
+      binder.snapshot.handleClick();
+
+      assert.ok(dispatched);
+      assert.strictEqual(dispatched.name, 'custom_click');
+      assert.deepStrictEqual(dispatched.context, {userId: 42});
+    });
   });
 });
