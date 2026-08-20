@@ -80,7 +80,7 @@ export class SurfaceModel<T extends ComponentApi = ComponentApi> {
     readonly sendDataModel: boolean = false,
   ) {
     this.dataModel = new DataModel({});
-    this.componentsModel = new SurfaceComponentsModel();
+    this.componentsModel = new SurfaceComponentsModel(catalog);
   }
 
   /**

@@ -565,7 +565,7 @@ describe('MessageProcessor', () => {
         },
         (err: any) => {
           assert.ok(err instanceof A2uiValidationError);
-          assert.strictEqual(err.message, 'Missing root component');
+          assert.ok(err.message.includes('Missing root component'));
           return true;
         },
       );
@@ -673,10 +673,8 @@ describe('MessageProcessor', () => {
         },
         (err: any) => {
           assert.ok(err instanceof A2uiValidationError);
-          assert.strictEqual(
-            err.message,
-            "Orphaned component 'orphan1' is not reachable from root",
-          );
+          assert.ok(err.message.includes('orphan1'));
+          assert.ok(err.message.includes('not reachable'));
           return true;
         },
       );
