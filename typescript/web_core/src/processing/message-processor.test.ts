@@ -16,12 +16,8 @@
 
 import * as assert from 'node:assert';
 import {describe, it, beforeEach} from 'node:test';
-import {
-  MessageProcessor,
-  formatZodIssue,
-  STRICT_VALIDATION,
-  RELAXED_VALIDATION,
-} from './message-processor.js';
+import {MessageProcessor, formatZodIssue} from './message-processor.js';
+import {STRICT_VALIDATION, RELAXED_VALIDATION} from '../validating/validator.js';
 import {Catalog, ComponentApi} from '../catalog/types.js';
 import {A2uiValidationError} from '../errors.js';
 import {z} from 'zod';
